@@ -3292,161 +3292,63 @@ addUnlockableBuilding("martain-peanuts", "Martain peanut farm", "🥜", 40000000
     addUpgrade("mine", "Gravis-engine", "Uses the gravitational potential energy of the planet's outer core to power itself.", 98.5e6, 2.45, 4, "drill", "Mine", buildingCheck("mine", 1), undefined, undefined, engines[3]);
     addUpgrade("mine", "The Emerald engine", "Like the Emerald drill, it uses the power of the Emerald in favor of drilling deeper.", 400e9, 3.5, 5, "drill", "Mine", buildingCheck("mine", 1), undefined, undefined, engines[4]);
     
-    // Prestige logic
-    function rebuildAllBuildings() {
-      buildingData.length = 0;
-      lockedBuildingData.length = 0;
-      document.querySelectorAll("#buildings button")
-        .forEach(btn => btn.remove());
-      for (let i = 0; i < buildingDefinitions.length; i++) {
-        const b = buildingDefinitions[i];
-        addUnlockableBuilding(
-          b.id,
-          b.name,
-          b.emoji,
-          b.price,
-          b.eps,
-          b.info,
-          b.prvBuilding,
-          b.reqOwned,
-          b.reqCoins,
-          b.type,
-          b.boostId,
-          b.fused
-        );
-      }
+        // PRESTIGE SYSTEM - FIXED LOGIC (lines 3295-3449)
+    // Helper functions to apply prestige boosts
+    var applyPrestigeToEPS = function(baseEPS) {
+      return baseEPS * prestigeIdleBoost;
     }
-    let dailyWheelUnlocked = false;
-    let ancientElephants = [];
-    var updateAncientTusks = function(plusAmount) {
-      ancientTusks += plusAmount;
-      document.getElementById("ancient-tusks").textContent = simpNum(ancientTusks);
+    var applyPrestigeToEPC = function(baseEPC) {
+      return baseEPC * prestigeClickBoost;
     }
-    const ancientElephantContainer = document.getElementById("ancient-ele-container");
-    var createAncientElephant = function(pic, id, name, price, boost, info, boostInfo) {
-      let ancientStat = {
-        pic: pic,
-        id: id,
-        name: name,
-        price: price,
-        boost: boost,
-        info: info,
-        boostInfo: boostInfo,
-        owned: false
-      }
-      ancientElephants.push(ancientStat);
-      const btn = document.createElement("button");
-      const topLine = document.createElement("span");
-      const midLine = document.createElement("span");
-      const bottomLine = document.createElement("span");
-      const picture = document.createElement("img");
-      btn.style.display = "block";
-      btn.style.textAlign = "left";
-      btn.style.width = "95%";
-      btn.style.height = "55px";
-      btn.style.position = "relative";
-      btn.style.margin = "0 0 5px 0";
-      btn.className = "ancient-btn";
-      btn.style.background = "rgb(50, 50, 50)";
-      btn.style.border = "1px solid black";
-      btn.style.borderRadius = "5px";
-      btn.style.color = "white";
-      topLine.innerHTML = "<b>" + name + "</b>";
-      topLine.style.position = "absolute";
-      topLine.style.top = "3px";
-      topLine.style.zIndex = "1";
-      midLine.innerHTML = boostInfo;
-      midLine.style.display = "block";
-      midLine.style.position = "absolute";
-      midLine.style.top = "35%";
-      midLine.style.zIndex = "1";
-      bottomLine.innerHTML = simplifyNumber(price) + " Ancient Tusks";
-      bottomLine.style.position = "absolute";
-      bottomLine.style.bottom = "0px";
-      bottomLine.style.zIndex = "1";
-      picture.src = pic;
-      picture.style.position = "relative";
-      picture.style.maxHeight = "95%";
-      picture.style.maxWidth = "80px";
-      picture.style.float = "right";
-      btn.addEventListener("mouseenter", function() {
-        document.getElementById("info").innerHTML = info;
-      });
-      btn.addEventListener("mouseleave", function() {
-        document.getElementById("info").innerHTML = "";
-      });
-      btn.addEventListener("click", function() {
-        if (ancientTusks >= ancientStat.price) {
-          ancientTusks -= ancientStat.price;
-          ancientTusksSpent += ancientStat.price;
-          document.getElementById("ancient-tusks").textContent = simplifyNumber(ancientTusks);
-          if (ancientStat.boost) ancientStat.boost();
-          ancientStat.owned = true;
-          btn.remove();
-        } else {
-          alertMessage("You don't have enough ancient tusks.", "small", 3500);
-        }
-      });
-      btn.appendChild(topLine);
-      btn.appendChild(midLine);
-      btn.appendChild(bottomLine);
-      btn.appendChild(picture);
-      ancientElephantContainer.appendChild(btn);
+    // Calculate ancient tusks earned based on progression
+    var calculateAncientTusksEarned = function() {
+      // Award tusks based on total coins earned and playtime
+      var baseTusks = Math.floor(totalElephantCoinsEarned / 1e6) + Math.floor(Math.sqrt(totalPlayTime / 60));
+      return Math.max(1, baseTusks);
     }
-    createAncientElephant(eleSrc, "elephant-riches", "The Elephant of Riches", 15, function() {prestigeBoost *= 1.05}, "This Elephant is very rich and extracts Elephant Coins from the Elephant Realm.", "+5% Elephant Coin boost");
-    createAncientElephant(eleSrc, "elephant-wealth", "The Elephant of Wealth", 18, function() {prestigeIdleBoost *= 1.075}, "This wealthy Elephant helps by increasing your idle Elephant Coins", "+7.5% Idle Elephant Coin boost");
-    createAncientElephant(eleSrc, "elephant-clicks", "The Elephant of Clicks", 18, function() {prestigeClickBoost *= 1.08}, "This Elephant likes to click a lot, helping you get more Elephant Coins.", "+8% click power");
-    createAncientElephant(eleSrc, "elephant-cursors", "The Elephant of Cursors", 25, function() {prestigeBoost *= 1 + (cursorUpgradesBought / 50)}, "The Elephant of Cursors. You must please him by buying him when you have plenty of cursor upgrades. If so, it will reward you with a boost.", "<span class='smaller'>+2% ECs for every cursor owned on purchase</span>");
-    createAncientElephant(eleSrc, "elephant-wisdom", "The Elephant of Wisdom", 85, function() {window.setInterval(checkFusionBtn, 500)}, "This Elephant is so clever that it will tell you if a fuse in the fusion lab is correct or not.", "<span class='small'>Fuse button will vibrate when correct</span>");
-    createAncientElephant(mineEleSrc, "elephant-ore", "The Elephant of Ore", 12, function() {mineCoinBoost *= 1.15}, "This Elephant sleeps on a huge pile of ore, which sometimes it trades with you for mine coins.", "+15% mine coins");
-    createAncientElephant(eleSrc, "elephant-surprise", "The Elephant of Surpise", 100, function() {dailyWheelUnlocked = true}, "This Elephant lives up to its name. It surprises you by giving you something every day. (the 'something' part is a surprise)", "Unlocks the daily wheel");
-    createAncientElephant(eleSrc, "elephant-idle", "The Elephant of Haste", 48, function() {speedClicks = true}, "This Elephant is all for speed. When purchased, he will enable you to hold down the spacebar for more productive clicks.", "<span class='smaller'>Holding down the spacebar will autoclick</span>");
-    createAncientElephant(eleSrc, "elephant-luck", "The Elephant of Luck", 50, function() {goldenElephantChance *= 1.05}, "This lucky Elephant helps you get more Golden Elephants.", "+5% Golden Elephant chance");
-    createAncientElephant(eleSrc, "elephant-fluke", "The Elephant of Fluke", 95, function() {for (let i = 0; i < wheelRewards.length; i++) {if (wheelRewards[i].double) wheelRewards[i].weight *= 3}}, "With a bit of fluke, this Elephant will let you cheat a little on the Daily Wheel.", "<span class='smaller'>Good prize chance increased on daily wheel</span>");
-    var prestigeBtn = document.getElementById("prestige-btn");
-    var resetProgress = function() {
-      if (trueElephantCoins <= 1e12) {
-        alertMessage("Not progressed enough.", "small", 3500);
+    // Main prestige function - execute prestige and reset
+    var doPrestige = function() {
+      // Check if player has met minimum prestige requirement
+      if (totalElephantCoinsEarned < 1e6) {
+        alertMessage("You need to earn at least 1 million coins before prestiging!", "small", 3000);
         return;
       }
-      updateAncientTusks(Math.ceil(Math.log10(trueElephantCoins * trueElephantCoins * trueElephantCoins)));
-      trueElephantCoins = 0;
-      displayedElephantCoins.textContent = "0";
-      elephantsPerSecond = 0;
-      elephantsPerClick = 1 * prestigeBoost * prestigeClickBoost;
-      document.getElementById("eps").textContent = simplifyNumber(elephantsPerSecond);
-      document.getElementById("epc").textContent = simplifyNumber(elephantsPerClick);
-      rebuildAllBuildings();
-      for (let i = 0; i < buildingData.length; i++) {
-        buildingData[i].owned = 0;
-        buildingData[i].currentPrice = buildingData[i].basePrice;
-        document.getElementById(buildingData[i].id + "-owned").textContent = "0";
-        document.getElementById(buildingData[i].id + "-price").textContent = simplifyNumber(buildingData[i].basePrice);
-      }
-      totalBuildingsBought = 0;
-      selectedFusion.length = 0;
-      mineUnlocked = false;
-      depth = 0;
-      for (let mineral in minerals) {
-        minerals[mineral].amount = 0;
-      }
-      rawTimeUnit = 1e3;
-      timeUnit = 1e3;
+      // Calculate and award ancient tusks
+      var earnedTusks = calculateAncientTusksEarned();
+      ancientTusksEarned += earnedTusks;
+      totalAncientTusks += earnedTusks;
+      ancientTusks += earnedTusks;
+      bestAncientTusks = Math.max(bestAncientTusks, ancientTusks);
+      totalPrestiges++;
+      // Update prestige boost multipliers
+      // Each ancient tusk provides 5% bonus to idle and click income (cumulative)
+      prestigeIdleBoost = 1 + (ancientTusks * 0.05);
+      prestigeClickBoost = 1 + (ancientTusks * 0.05);
+      prestigeBoost = prestigeIdleBoost; // Overall prestige multiplier
+      // Reset session variables (keep all-time totals)
+      sessionElephantCoinsEarned = 0;
+      sessionElephantCoinsSpent = 0;
+      sessionElephantCoins = 0;
+      sessionPlayTime = 0;
+      sessionClicks = 0;
+      sessionBuildingsBought = 0;
+      sessionUpgradesBought = 0;
+      sessionAchievementsUnlocked = 0;
+      totalSessions++;
+      // Refresh UI elements
+      document.getElementById("ancient-tusks").textContent = ancientTusks;
+      document.getElementById("ele-coins").textContent = "0";
+      // Show prestige message
+      var percentBoost = (ancientTusks * 5);
+      alertMessage("PRESTIGE!\n\nYou earned " + earnedTusks + " Ancient Tusks!\n\nPrestige Boost: +" + percentBoost + "%", "big", 5000);
     }
-    prestigeBtn.addEventListener("click", resetProgress);
-    const updatePredictedTusks = function() {
-      let predictedTusks = document.getElementById("predicted-tusks");
-      let amount;
-      if (trueElephantCoins <= 1e12) {
-        amount = 0;
-        prestigeBtn.style.animation = undefined;
-      } else {
-        amount = Math.ceil(Math.log10(trueElephantCoins * trueElephantCoins * trueElephantCoins));
-        prestigeBtn.style.animation = "prestigeBtnExited 1s linear infinite";
-      }
-      predictedTusks.textContent = simplifyNumber(amount);
+    // Button event listener for prestige
+    if (document.getElementById("prestige-btn")) {
+      document.getElementById("prestige-btn").addEventListener("click", function() {
+        doPrestige();
+      });
     }
-    window.setInterval(updatePredictedTusks, 2e3);
+
     // Keyboard shortcuts
     document.addEventListener("keypress", function(event) {
       if (event.key === "b") {
